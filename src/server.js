@@ -5,9 +5,6 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 require('dotenv').config()
 
-const { UserModel } = require('./database/userSchema');
-const { ExercisesModel } = require('./database/exerciseSchema');
-
 // server configurations
 
 mongoose.connect(
@@ -17,13 +14,44 @@ mongoose.connect(
         useUnifiedTopology: true
     });
 const app = express();
-app.use(cors({ optionsSuccessStatus: 200 }));
+app.use(cors());
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.use('/public', express.static(process.cwd() + '/src/public'));
 
+// mongoose models
+const exerciseSchema = new mongoose.Schema({
+    userId: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    duration: {
+      type: Number,
+      min: 1,
+      required: true,
+    },
+    date: {
+      type: Date,
+      required: true,
+      default: Date.now
+    },
+  });
+const ExercisesModel = mongoose.model('Exercises', exerciseSchema);
+
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    unique: true,
+    required: true,
+  },
+});
+const UserModel = mongoose.model('Users', userSchema);
 
 // middleware
 
@@ -33,35 +61,6 @@ app.use('/public', express.static(process.cwd() + '/src/public'));
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.path} -${req.ip}`);
     next();
-  });
-
-/**
- * Middleware function to catch not found routes
- */
-app.use((req, res, next) => {
-	return next({ status: 404, message: 'not found' });
-});
-
-/**
- * Middleware to handle errors
- */
-app.use((err, req, res, next) => {
-	let errCode, errMessage;
-
-	if (err.errors) {
-		// mongoose validation error
-		errCode = 400; // bad request
-		const keys = Object.keys(err.errors);
-		// report the first validation error
-		errMessage = err.errors[keys[0]].message;
-	} else {
-		// generic or custom error
-		errCode = err.status || 500;
-		errMessage = err.message || 'Internal Server Error';
-	}
-
-	res.status(errCode).type('txt')
-		.send(errMessage);
 });
 
 // routes
@@ -74,24 +73,24 @@ app.post('/api/users', function (req, res) {
 		return res.json({ error: 'username is required' });
 	}
 
-	let username = req.body.username;
-	let _id = '';
+	const username = req.body.username;
 
 	UserModel.findOne({ username: username }, function (err, data) {
 		if (!err && data === null) {
-			let newUser = new ExercisesModel({
+			const newUser = new UserModel({
 				username: username
 			});
 
 			newUser.save(function (err, data) {
 				if (!err) {
-					_id = data['_id'];
 
 					return res.json({
-						_id: _id,
+						_id: data['_id'],
 						username: username
 					});
-				}
+				}else{
+                    return res.json({message: err})
+                }
 			});
 		} else {
 			return res.json({ error: 'username already exists' });
@@ -103,27 +102,17 @@ app.get('/api/users', function (req, res) {
 	UserModel.find({}, function (err, data) {
 		if (!err) {
 			return res.json(data);
-		}
+		}else{
+            return res.json({message: err})
+        }
 	});
 });
 
 app.post('/api/users/:_id/exercises', function (req, res) {
-	if (req.params._id === '0') {
-		return res.json({ error: '_id is required' });
-	}
-
-	if (req.body.description === '') {
-		return res.json({ error: 'description is required' });
-	}
-
-	if (req.body.duration === '') {
-		return res.json({ error: 'duration is required' });
-	}
-
-	let userId = req.params._id;
-	let description = req.body.description;
-	let duration = parseInt(req.body.duration);
-	let date = (req.body.date !== undefined ? new Date(req.body.date) : new Date());
+	const userId = req.params._id;
+	const description = req.body.description;
+	const duration = parseInt(req.body.duration);
+	const date = (req.body.date !== undefined ? new Date(req.body.date) : new Date());
 
 	if (isNaN(duration)) {
 		return res.json({ error: 'duration is not a number' });
@@ -135,7 +124,7 @@ app.post('/api/users/:_id/exercises', function (req, res) {
 
 	UserModel.findById(userId, function (err, data) {
 		if (!err && data !== null) {
-			let newExercise = new ExercisesModel({
+			const newExercise = new ExercisesModel({
 				userId: userId,
 				description: description,
 				duration: duration,
@@ -152,6 +141,9 @@ app.post('/api/users/:_id/exercises', function (req, res) {
 						date: new Date(data2['date']).toDateString()
 					});
 				}
+                else{
+                    return res.json({message: err2})
+                }
 			});
 		} else {
 			return res.json({ error: 'user not found' });
@@ -159,12 +151,8 @@ app.post('/api/users/:_id/exercises', function (req, res) {
 	});
 });
 
-app.get('/api/users/:_id/exercises', function (req, res) {
-	res.redirect('/api/users/' + req.params._id + '/logs');
-});
-
 app.get('/api/users/:_id/logs', function (req, res) {
-	let userId = req.params._id;
+	const userId = req.params._id;
 	let findConditions = { userId: userId };
 
 	if (
@@ -191,7 +179,7 @@ app.get('/api/users/:_id/logs', function (req, res) {
 		}
 	}
 
-	let limit = (req.query.limit !== undefined ? parseInt(req.query.limit) : 0);
+	const limit = (req.query.limit !== undefined ? parseInt(req.query.limit) : 0);
 
 	if (isNaN(limit)) {
 		return res.json({ error: 'limit is not a number' });
@@ -213,7 +201,9 @@ app.get('/api/users/:_id/logs', function (req, res) {
 						}),
 						count: data2.length
 					});
-				}
+				}else{
+                    return res.json({message: err2})
+                }
 			});
 		} else {
 			return res.json({ error: 'user not found' });
