@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Exercise Tracker | freeCodeCamp</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Exercise tracker</h1>
+      <form action="/api/users" method="post">
+        <h3>Create a New User</h3>
+        <p><code>POST /api/users</code></p>
+        <input id="uname" type="text" name="username" placeholder="username" />
+        <input type="submit" value="Submit" />
+      </form>
+      <form action="/api/users/_id/logs" id="logs-form" method="get">
+        <h3>Get User Logs</h3>
+        <p><code>GET /api/users/:_id/logs</code></p>
+        <input id="uid" type="text" name="_id" placeholder="_id" />
+        <input id="from" type="text" name="from" placeholder="from" />
+        <input id="to" type="text" name="to" placeholder="to" />
+        <input id="limit" type="text" name="limit" placeholder="limit" />
+        <button type="button" onclick="getExerciseUser()">Submit</button>
+      </form>
+      <form action="/api/users/:_id/exercises" id="exercise-form" method="post">
+        <h3>Add exercises</h3>
+        <p><code>POST /api/users/:_id/exercises</code></p>
+        <input id="uid" type="text" name=":_id" placeholder=":_id" />
+        <input id="desc" type="text" name="description" placeholder="description*" />
+        <input id="dur" type="text" name="duration" placeholder="duration* (mins.)" />
+        <input id="date" type="text" name="date" placeholder="date (yyyy-mm-dd)" />
+        <button type="button" onclick="createExerciseUser()">Submit</button>
+      </form>
+      <p>
+        <strong>GET user's exercise log: </strong>
+        <code>GET /api/users/:_id/logs?[from][&amp;to][&amp;limit]</code>
+      </p>
+      <p><strong>[ ]</strong> = optional</p>
+      <p><strong>from, to</strong> = dates (yyyy-mm-dd); <strong>limit</strong> = number</p>
+      <br>
+      <h3>Created with Node.js, TypeScript, Express, and MongoDB.</h3>
+    </div>
+    <script>
+      const exerciseForm = document.getElementById("exercise-form");
+      const logsForm = document.getElementById("logs-form");
+
+      function createExerciseUser(){
+        const userId = document.getElementById("uid").value;
+        exerciseForm.action = `/api/users/${userId}/exercises`;
+
+        exerciseForm.submit();
+      }
+
+      function getExerciseUser(){
+        const userId = document.getElementById("uid").value;
+        exerciseForm.action = `/api/users/${userId}/logs`;
+        logsForm.submit();
+      }
+
+
+    </script>
+    <div class="footer">
+      <p>
+        By <a href="https://www.linkedin.com/in/christophermilian/">Christopher Milian</a>
+      </p>
+    </div>
+  </body>
+</html>
