@@ -16,7 +16,7 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.use('/public', express.static(process.cwd() + '/src/public'));
+app.use(express.static(process.cwd() + '/src/public'));
 
 // mongoose models
 const exerciseSchema = new mongoose.Schema({
@@ -66,6 +66,8 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/users', (req, res) => {
+  console.log("process.cwd(): ", process.cwd());
+  return res.json({})
   const inputUsername = req.body.username;
   if (!inputUsername || inputUsername?.length == 0) {
     throw Error('A username is required.');
