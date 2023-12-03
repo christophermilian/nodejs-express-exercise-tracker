@@ -99,7 +99,7 @@ app.post('/api/users', (req, res) => {
 app.get('/api/users', (req, res) => {
 	UserModel.find({}, (error, data) => {
 		if (error) {
-            return res.json({message: error});
+            return res.json({ message: error });
 		}else{
             return res.json(data);
         }
@@ -122,14 +122,9 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 		return res.json({ error: 'date is invalid' });
 	}
 
-	UserModel.findById(userId, (error, data) => {
+	UserModel.findById(input.userId, (error, data) => {
 		if (!error && data !== null) {
-			const newExercise = new ExercisesModel({
-				userId: userId,
-				description: description,
-				duration: duration,
-				date: date
-			});
+			const newExercise = new ExercisesModel(input);
 
 			newExercise.save((err2, data2) => {
 				if (!err2) {
@@ -142,7 +137,7 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 					});
 				}
                 else{
-                    return res.json({message: err2})
+                    return res.json({ message: err2 })
                 }
 			});
 		} else {
@@ -202,7 +197,7 @@ app.get('/api/users/:_id/logs', (req, res) => {
 						count: data2.length
 					});
 				}else{
-                    return res.json({message: err2})
+                    return res.json({ message: err2 })
                 }
 			});
 		} else {
