@@ -70,14 +70,13 @@ app.get('/', (req, res) => {
 
 app.post('/api/users', (req, res) => {
     const inputUsername = req.body.username;
-	if (!inputUsername || inputUsername.length == 0) {
+	if (!inputUsername || inputUsername?.length == 0) {
 		throw Error("A username is required.");
 	}
 
-
-	UserModel.findOne({ username: inputUsername }, (error, data) => {
+	UserModel.findOne({ username: inputUsername }, (error) => {
 		if (error) {
-            return res.json({ error: 'username already exists' });
+            return res.json({ message: "The given username already exists" });
 		} 
         
         const newUser = new UserModel({
@@ -115,34 +114,31 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     }
 
 	if (isNaN(input.duration)) {
-		return res.json({ error: 'duration is not a number' });
+		return res.json({ error: "The duration input is not a number" });
 	}
 
-	if (input.date == 'Invalid Date') {
-		return res.json({ error: 'date is invalid' });
+	if (input.date.toString() == "Invalid Date") {
+		return res.json({ message: "The date input is invalid" });
 	}
 
 	UserModel.findById(input.userId, (error, data) => {
-		if (!error && data !== null) {
-			const newExercise = new ExercisesModel(input);
-
-			newExercise.save((err2, data2) => {
-				if (!err2) {
-					return res.json({
-						_id: data['_id'],
-						username: data['username'],
-						description: data2['description'],
-						duration: data2['duration'],
-						date: new Date(data2['date']).toDateString()
-					});
-				}
-                else{
-                    return res.json({ message: err2 })
-                }
-			});
-		} else {
+		if (error) {
 			return res.json({ error: 'user not found' });
-		}
+		} 
+        const newExercise = new ExercisesModel(input);
+
+		newExercise.save((saveError, data2) => {
+			if (saveError) {
+                return res.json({ message: saveError })
+			}
+            return res.json({
+                _id: data['_id'],
+                username: data['username'],
+                description: data2['description'],
+                duration: data2['duration'],
+                date: new Date(data2['date']).toDateString()
+            });
+		});
 	});
 });
 
