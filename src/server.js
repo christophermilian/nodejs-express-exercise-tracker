@@ -68,62 +68,62 @@ app.get('/', (req, res) => {
 	res.sendFile(__dirname + '/views/index.html');
 });
 
-app.post('/api/users', function (req, res) {
-	if (req.body.username === '') {
-		return res.json({ error: 'username is required' });
+app.post('/api/users', (req, res) => {
+    const inputUsername = req.body.username;
+	if (!inputUsername || inputUsername.length == 0) {
+		throw Error("A username is required.");
 	}
 
-	const username = req.body.username;
 
-	UserModel.findOne({ username: username }, function (err, data) {
-		if (!err && data === null) {
-			const newUser = new UserModel({
-				username: username
-			});
+	UserModel.findOne({ username: inputUsername }, (error, data) => {
+		if (error) {
+            return res.json({ error: 'username already exists' });
+		} 
+        
+        const newUser = new UserModel({
+            username: inputUsername
+        });
 
-			newUser.save(function (err, data) {
-				if (!err) {
-
-					return res.json({
-						_id: data['_id'],
-						username: username
-					});
-				}else{
-                    return res.json({message: err})
-                }
-			});
-		} else {
-			return res.json({ error: 'username already exists' });
-		}
+        newUser.save((error, data) => {
+            if (error) {
+                return res.json({ message: error })
+            }
+            return res.json({
+                _id: data['_id'],
+                username: inputUsername
+            });
+        });
 	});
 });
 
-app.get('/api/users', function (req, res) {
-	UserModel.find({}, function (err, data) {
-		if (!err) {
-			return res.json(data);
+app.get('/api/users', (req, res) => {
+	UserModel.find({}, (error, data) => {
+		if (error) {
+            return res.json({message: error});
 		}else{
-            return res.json({message: err})
+            return res.json(data);
         }
 	});
 });
 
-app.post('/api/users/:_id/exercises', function (req, res) {
-	const userId = req.params._id;
-	const description = req.body.description;
-	const duration = parseInt(req.body.duration);
-	const date = (req.body.date !== undefined ? new Date(req.body.date) : new Date());
+app.post('/api/users/:_id/exercises', (req, res) => {
+    const input = {
+        userId: req.params._id,
+        description: req.body.description,
+        duration: parseInt(req.body.duration),
+        date: req.body.date !== undefined ? new Date(req.body.date) : new Date()
+    }
 
-	if (isNaN(duration)) {
+	if (isNaN(input.duration)) {
 		return res.json({ error: 'duration is not a number' });
 	}
 
-	if (date == 'Invalid Date') {
+	if (input.date == 'Invalid Date') {
 		return res.json({ error: 'date is invalid' });
 	}
 
-	UserModel.findById(userId, function (err, data) {
-		if (!err && data !== null) {
+	UserModel.findById(userId, (error, data) => {
+		if (!error && data !== null) {
 			const newExercise = new ExercisesModel({
 				userId: userId,
 				description: description,
@@ -131,7 +131,7 @@ app.post('/api/users/:_id/exercises', function (req, res) {
 				date: date
 			});
 
-			newExercise.save(function (err2, data2) {
+			newExercise.save((err2, data2) => {
 				if (!err2) {
 					return res.json({
 						_id: data['_id'],
@@ -151,7 +151,7 @@ app.post('/api/users/:_id/exercises', function (req, res) {
 	});
 });
 
-app.get('/api/users/:_id/logs', function (req, res) {
+app.get('/api/users/:_id/logs', (req, res) => {
 	const userId = req.params._id;
 	let findConditions = { userId: userId };
 
@@ -185,14 +185,14 @@ app.get('/api/users/:_id/logs', function (req, res) {
 		return res.json({ error: 'limit is not a number' });
 	}
 
-	UserModel.findById(userId, function (err, data) {
-		if (!err && data !== null) {
-			ExercisesModel.find(findConditions).sort({ date: 'asc' }).limit(limit).exec(function (err2, data2) {
+	UserModel.findById(userId, (error, data) => {
+		if (!error && data !== null) {
+			ExercisesModel.find(findConditions).sort({ date: 'asc' }).limit(limit).exec((err2, data2) => {
 				if (!err2) {
 					return res.json({
 						_id: data['_id'],
 						username: data['username'],
-						log: data2.map(function (e) {
+						log: data2.map((e) => {
 							return {
 								description: e.description,
 								duration: e.duration,
@@ -213,5 +213,5 @@ app.get('/api/users/:_id/logs', function (req, res) {
 
 // run server listener
 const listener = app.listen(process.env.PORT || 3000, () => {
-	console.log('Your app is listening on port ' + listener.address().port);
+	console.log('App is listening on port ' + listener.address().port);
 });
